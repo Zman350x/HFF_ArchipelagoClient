@@ -6,10 +6,12 @@
     <Reference Include="0Harmony" />
     <Reference Include="BepInEx" />
     <Reference Include="Assembly-CSharp" />
+    <Reference Include="HumanAPI" />
     <Reference Include="Mono.Cecil" />
     <Reference Include="UnityEngine" />
     <Reference Include="UnityEngine.CoreModule" />
     <Reference Include="UnityEngine.UI" />
     <Reference Include="UnityEngine.UIModule" />
+    <Reference Include="UnityEngine.PhysicsModule" />
   </ItemGroup>
 </Project>
