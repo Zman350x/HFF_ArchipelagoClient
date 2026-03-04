@@ -4,15 +4,15 @@ namespace HffArchipelagoClient
 
     public static class InputLimiter
     {
-        public static bool canGrabLeft = true;
-        public static bool canGrabRight = true;
-        public static bool canJump = true;
-        public static bool canPlayDead = true;
-        public static bool canLookLeft = true;
-        public static bool canLookRight = true;
-        public static bool canLookUp = true;
-        public static bool canLookDown = true;
-        public static bool canShootFireworks = true;
+        public static bool canGrabLeft = false;
+        public static bool canGrabRight = false;
+        public static bool canJump = false;
+        public static bool canPlayDead = false;
+        public static bool canLookLeft = false;
+        public static bool canLookRight = false;
+        public static bool canLookUp = false;
+        public static bool canLookDown = false;
+        public static bool canShootFireworks = false;
 
         public static void Patch()
         {
