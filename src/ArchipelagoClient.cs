@@ -1,4 +1,6 @@
-﻿namespace HffArchipelagoClient
+using System;
+
+namespace HffArchipelagoClient
 {
     using BepInEx;
     using HarmonyLib;
@@ -11,11 +13,20 @@
         public static ArchipelagoClient Instance { get; private set; }
         public static bool IsActive { get; private set; } = false;
 
+        public static CommandRegistry commands;
+
+        internal static new BepInEx.Logging.ManualLogSource Logger;
+
         private void Awake()
         {
             Instance = this;
+            Logger = base.Logger;
+
+            commands = (CommandRegistry) AccessTools.DeclaredField(typeof(Shell), "commands").GetValue(null);
+
             SceneManager.sceneLoaded += OnSceneLoaded;
             Harmony.CreateAndPatchAll(typeof(ArchipelagoClient), "ArchipelagoClient");
+            HubWorld.Patch();
         }
 
         private static void OnStartup()
@@ -29,13 +40,17 @@
                 return;
 
             InputLimiter.Patch();
+            Shell.RegisterCommand("hub", new Action(HubWorld.LoadHubWorld), "hub\r\nGo to the Archipelago hub");
+            HubWorld.LoadHubWorld();
+
             IsActive = true;
-            Multiplayer.App.instance.LaunchSinglePlayer(0, WorkshopItemSource.BuiltIn, 0, 0);
         }
 
         public static void ArchipelagoEnd()
         {
             InputLimiter.Unpatch();
+            commands.UnRegisterCommand("hub", new Action(HubWorld.LoadHubWorld));
+
             IsActive = false;
         }
 
