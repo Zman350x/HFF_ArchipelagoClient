@@ -41,8 +41,13 @@ namespace HffArchipelagoClient
 
             InputLimiter.Patch();
             Shell.RegisterCommand("hub", new Action(HubWorld.LoadHubWorld), "hub\r\nGo to the Archipelago hub");
-            HubWorld.LoadHubWorld();
+            MenuButtonTools.AddButton("PauseMenu", "HubButton", "EXIT TO ARCHIPELAGO HUB", 7, () => {
+                    Game.instance.Resume();
+                    MenuSystem.instance.HideMenus();
+                    HubWorld.LoadHubWorld();
+            });
 
+            HubWorld.LoadHubWorld();
             IsActive = true;
         }
 
@@ -50,6 +55,8 @@ namespace HffArchipelagoClient
         {
             InputLimiter.Unpatch();
             commands.UnRegisterCommand("hub", new Action(HubWorld.LoadHubWorld));
+            MenuButtonTools.DestroyButton("PauseMenu", "HubButton");
+            MenuButtonTools.EnableDisableButton("PauseMenu", "ExitButton", true);
 
             IsActive = false;
         }
@@ -57,10 +64,25 @@ namespace HffArchipelagoClient
         public static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             if (scene.path == "Assets/Scenes/Startup.unity")
+            {
                 OnStartup();
+                return;
+            }
+
+            if (scene.path == HubWorld.emptySceneName &&
+                Game.instance.currentLevelType == WorkshopItemSource.NotSpecified &&
+                Multiplayer.App.state != Multiplayer.AppSate.Menu)
+            {
+                MenuButtonTools.EnableDisableButton("PauseMenu", "HubButton", false);
+                MenuButtonTools.EnableDisableButton("PauseMenu", "ExitButton", true);
+                HubWorld.OnHubWorldLoaded();
+                return;
+            }
 
             if (IsActive)
             {
+                MenuButtonTools.EnableDisableButton("PauseMenu", "HubButton", true);
+                MenuButtonTools.EnableDisableButton("PauseMenu", "ExitButton", false);
                 Barrier.OnSceneLoaded(scene, mode);
             }
         }

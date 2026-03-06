@@ -9,6 +9,17 @@ namespace HffArchipelagoClient
 
     public static class MenuButtonTools
     {
+        private static TMP_FontAsset font;
+        private static Material fontMaterial;
+
+        static MenuButtonTools()
+        {
+            font = Resources.FindObjectsOfTypeAll<TMP_FontAsset>()
+                .Single(font => font.name == "Menu SDF");
+            fontMaterial = Resources.FindObjectsOfTypeAll<Material>()
+                .Single(material => material.name == "Menu SDF Material");
+        }
+
         public static void AddButton(string menu, string name, string text, int order, UnityAction callback)
         {
             GameObject menuRoot = GameObject.Find($"/Game(Clone)/Menu/MenuSystem/{menu}(Clone)");
@@ -21,8 +32,9 @@ namespace HffArchipelagoClient
 
             button.layer = LayerMask.NameToLayer("UI");
             button.transform.SetParent(menuButtons.transform);
-            button.transform.localScale = new Vector3(1.0f, 1.0f, 1.0f);
-            button.transform.localPosition = new Vector3(0.0f, 0.0f, 0.0f);
+            button.transform.localScale = Vector3.one;
+            button.transform.localPosition = Vector3.zero;
+            button.transform.localRotation = Quaternion.identity;
             button.GetComponent<LayoutElement>().preferredHeight = 70;
             button.transform.SetSiblingIndex(order);
 
@@ -50,10 +62,8 @@ namespace HffArchipelagoClient
             textContent.color = Color.black;
             textContent.fontSize = 40;
             textContent.fontSizeMax = 40;
-            textContent.font = Resources.FindObjectsOfTypeAll<TMP_FontAsset>()
-                .Single(font => font.name == "Menu SDF");
-            textContent.fontMaterial = Resources.FindObjectsOfTypeAll<Material>()
-                .Single(material => material.name == "Menu SDF Material");
+            textContent.font = font;
+            textContent.fontMaterial = fontMaterial;
             textContent.enableWordWrapping = false;
             textContent.enableAutoSizing = true;
             textContent.enableKerning = false;
