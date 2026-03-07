@@ -11,7 +11,12 @@ namespace HffArchipelagoClient
 
         private static GameObject hubLevelObject;
         private static Level hubLevel;
-        private static LevelSource hubLevelSource = new LevelSource(
+
+        private static WorkshopItemSource previousLevelType;
+        private static int previousLevelNumber;
+        private static Vector3? portalSpawnpoint;
+
+        public static readonly LevelSource hubLevelSource = new LevelSource(
             new WorkshopLevelMetadata {
                 itemType = WorkshopItemType.Level,
                 workshopId = ulong.MaxValue - 1,
@@ -21,6 +26,9 @@ namespace HffArchipelagoClient
 
         public static void LoadHubWorld()
         {
+            previousLevelType = Game.instance.currentLevelType;
+            previousLevelNumber = Game.instance.currentLevelNumber;
+
             LoadingTools.LoadLevel(hubLevelSource.levelData);
         }
 
@@ -34,19 +42,10 @@ namespace HffArchipelagoClient
             hubLevel = hubLevelObject.AddComponent<Level>();
 
             // Add things to the scene
-            AddRequiredLevelObjects();
             AddLighting();
             AddGeometry();
-
-            int portals = LevelSource.EnabledLevels.Count;
-
-            for (int i = 0; i < portals; ++i)
-            {
-                double angle = (2 * Math.PI * i) / portals;
-                Vector3 position = new Vector3((float) Math.Sin(angle), 0.0f, (float) Math.Cos(angle));
-                Vector3 rotation = new Vector3(0.0f, (float) (Mathf.Rad2Deg * angle), 0.0f);
-                Portal.CreatePortal(hubLevelObject.transform, position * 30, rotation, LevelSource.EnabledLevels[i]);
-            }
+            AddPortals();
+            AddRequiredLevelObjects(); // Must add after portals
 
             // Activate the level game object only after everything is setup
             hubLevelObject.SetActive(true);
@@ -56,11 +55,24 @@ namespace HffArchipelagoClient
         {
             GameObject spawnpoint = new GameObject("Spawnpoint");
             spawnpoint.transform.SetParent(hubLevelObject.transform);
-            spawnpoint.transform.localPosition = Vector3.zero;
+            if (portalSpawnpoint.HasValue)
+                spawnpoint.transform.position = portalSpawnpoint.Value;
+            else
+                spawnpoint.transform.localPosition = Vector3.zero;
             spawnpoint.transform.localRotation = Quaternion.identity;
             spawnpoint.transform.localScale = Vector3.one;
-            spawnpoint.AddComponent<Checkpoint>();
+            spawnpoint.AddComponent<Checkpoint>().number = 0;
             hubLevel.spawnPoint = spawnpoint.transform;
+
+            GameObject checkpoint = new GameObject("Checkpoint", typeof(BoxCollider));
+            checkpoint.transform.SetParent(hubLevelObject.transform);
+            checkpoint.transform.localPosition = Vector3.zero;
+            checkpoint.transform.localRotation = Quaternion.identity;
+            checkpoint.transform.localScale = Vector3.one;
+            checkpoint.GetComponent<BoxCollider>().center = new Vector3(0.0f, 1.0f, 0.0f);
+            checkpoint.GetComponent<BoxCollider>().size = new Vector3(70.0f, 2.0f, 70.0f);
+            checkpoint.GetComponent<BoxCollider>().isTrigger = true;
+            checkpoint.AddComponent<Checkpoint>().number = 1;
 
             GameObject fallTrigger = new GameObject("FallTrigger", typeof(BoxCollider));
             fallTrigger.transform.SetParent(hubLevelObject.transform);
@@ -96,6 +108,35 @@ namespace HffArchipelagoClient
             tempFloor.transform.localRotation = Quaternion.identity;
             tempFloor.transform.localScale = Vector3.one * 7;
             tempFloor.GetComponent<Collider>().enabled = true;
+        }
+
+        private static void AddPortals()
+        {
+            portalSpawnpoint = null;
+
+            GameObject portalParent = new GameObject("Portals");
+            portalParent.transform.SetParent(hubLevelObject.transform);
+            portalParent.transform.localPosition = Vector3.zero;
+            portalParent.transform.rotation = Quaternion.identity;
+            portalParent.transform.localScale = Vector3.one;
+
+            int portals = LevelSource.EnabledLevels.Count;
+
+            for (int i = 0; i < portals; ++i)
+            {
+                double angle = (2 * Math.PI * i) / portals;
+                Vector3 position = new Vector3((float) Math.Sin(angle), 0.0f, (float) Math.Cos(angle));
+                Vector3 rotation = new Vector3(0.0f, (float) (Mathf.Rad2Deg * angle), 0.0f);
+                GameObject portal = Portal.CreatePortal(portalParent.transform, position * 30, rotation, LevelSource.EnabledLevels[i]);
+
+                if (LevelSource.EnabledLevels[i].levelData.levelType == previousLevelType &&
+                    (LevelSource.EnabledLevels[i].levelData.workshopId == (ulong) previousLevelNumber ||
+                    (LevelSource.EnabledLevels[i].levelData.workshopId == 11 && previousLevelNumber == 12 &&
+                    previousLevelType == WorkshopItemSource.BuiltIn))) // Exception for Ice/Reprise
+                {
+                    portalSpawnpoint = portal.transform.Find("PortalSpawnpoint").position;
+                }
+            }
         }
     }
 }

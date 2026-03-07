@@ -23,7 +23,7 @@ namespace HffArchipelagoClient
                 .Where(material => material.name == "Menu SDF Material").First();
         }
 
-        public static void CreatePortal(Transform parent, Vector3 position, Vector3 rotation, LevelSource destination)
+        public static GameObject CreatePortal(Transform parent, Vector3 position, Vector3 rotation, LevelSource destination)
         {
             GameObject portalParent = new GameObject($"Portal to {destination.levelData.title}");
             portalParent.transform.SetParent(parent);
@@ -41,6 +41,12 @@ namespace HffArchipelagoClient
             portalBody.GetComponent<BoxCollider>().isTrigger = true;
             Portal portalComponent = portalBody.AddComponent<Portal>();
             portalComponent.destination = destination;
+
+            GameObject portalSpawn = new GameObject("PortalSpawnpoint");
+            portalSpawn.transform.SetParent(portalParent.transform);
+            portalSpawn.transform.localPosition = new Vector3(0.0f, 0.0f, -3.0f);
+            portalSpawn.transform.rotation = Quaternion.identity;
+            portalSpawn.transform.localScale = Vector3.one;
 
             // NOTE: Everything after here is temporary
 
@@ -81,11 +87,13 @@ namespace HffArchipelagoClient
             textContent.enableKerning = false;
             textContent.alignment = TextAlignmentOptions.Center;
             textContent.text = destination.levelData.title;
+
+            return portalParent;
         }
 
         public void OnTriggerEnter(Collider other)
         {
-            if (other.gameObject.GetComponent<Human>() == null)
+            if (other.tag != "Player")
                 return;
 
             if (destination.IsUnlocked() && !hasTriggered)

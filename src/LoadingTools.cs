@@ -32,7 +32,6 @@ namespace HffArchipelagoClient
 
         [HarmonyPatch(typeof(Game), "LoadLevel", MethodType.Enumerator)]
         [HarmonyTranspiler]
-        [HarmonyEmitIL("./dumps")]
         private static IEnumerable<CodeInstruction> GameLoadLevelMoveNext(IEnumerable<CodeInstruction> instructions, MethodBase originalMethod)
         {
             CodeMatcher codeMatcher = new CodeMatcher(instructions);
@@ -95,6 +94,84 @@ namespace HffArchipelagoClient
                 );
 
             return codeMatcher.Instructions();
+        }
+
+        [HarmonyPatch(typeof(Game), "Fall")]
+        [HarmonyTranspiler]
+        private static IEnumerable<CodeInstruction> GameFall(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        {
+            CodeMatcher codeMatcher = new CodeMatcher(instructions, generator);
+
+            // Match the "currentLevelType == EditorPick" if statement
+            codeMatcher.MatchStartForward(
+                    new CodeMatch(OpCodes.Ldarg_0),
+                    new CodeMatch(OpCodes.Ldfld, typeof(Game).GetField("currentLevelType")),
+                    new CodeMatch(OpCodes.Ldc_I4_1),
+                    new CodeMatch(OpCodes.Bne_Un),
+                    new CodeMatch(OpCodes.Ldarg_0),
+                    new CodeMatch(OpCodes.Ldc_I4_0),
+                    new CodeMatch(OpCodes.Stfld, typeof(Game).GetField("passedLevel"))
+                );
+
+            // Add the additional condition that the ArchipelagoClient must be inactive
+            Label label = (Label) codeMatcher.InstructionAt(3).operand;
+            codeMatcher.InsertAndAdvance(
+                    new CodeInstruction(OpCodes.Call, typeof(ArchipelagoClient).GetMethod("get_IsActive", new Type[] {})),
+                    new CodeInstruction(OpCodes.Brtrue, label)
+                );
+
+            // Find where `StatsAndAchievements.PassLevel()` is called
+            codeMatcher.MatchStartForward(
+                    new CodeMatch(OpCodes.Ldarg_0),
+                    new CodeMatch(OpCodes.Ldfld, typeof(Game).GetField("levels")),
+                    new CodeMatch(OpCodes.Ldarg_0),
+                    new CodeMatch(OpCodes.Ldfld, typeof(Game).GetField("currentLevelNumber")),
+                    new CodeMatch(OpCodes.Ldelem_Ref),
+                    new CodeMatch(OpCodes.Ldloc_0),
+                    new CodeMatch(OpCodes.Call, typeof(StatsAndAchievements).GetMethod("PassLevel", new Type[] { typeof(string), typeof(Human) }))
+                );
+
+            // Only run on built-in level
+            // Advancing past a `Ldarg_0` and adding one at the end so the labels line up
+            Label label2;
+            codeMatcher.CreateLabelAt(codeMatcher.Pos + 7, out label2);
+            codeMatcher.Advance(1).InsertAndAdvance(
+                    new CodeInstruction(OpCodes.Ldfld, typeof(Game).GetField("currentLevelType")),
+                    new CodeInstruction(OpCodes.Ldc_I4_0),
+                    new CodeInstruction(OpCodes.Bne_Un, label2),
+                    new CodeInstruction(OpCodes.Ldarg_0)
+                );
+
+            return codeMatcher.Instructions();
+        }
+
+        [HarmonyPatch(typeof(Game), "PassLevel", MethodType.Enumerator)]
+        [HarmonyPrefix]
+        private static void GamePassLevel(ref bool __runOriginal)
+        {
+            // Return to hub after beating level if active
+            if (ArchipelagoClient.IsActive)
+            {
+                // Except for Ice -> Reprise
+                if (Game.instance.currentLevelType == WorkshopItemSource.BuiltIn &&
+                    Game.instance.currentLevelNumber == 11)
+                    return;
+
+                Game.currentLevel.CompleteLevel();
+                HubWorld.LoadHubWorld();
+                StatsAndAchievements.Save();
+                __runOriginal = false;
+            }
+        }
+
+        [HarmonyPatch(typeof(GameSave), "PassCheckpointCampaign")]
+        [HarmonyPatch(typeof(GameSave), "PassCheckpointEditorPick")]
+        [HarmonyPatch(typeof(GameSave), "PassCheckpointWorkshop")]
+        [HarmonyPrefix]
+        private static void GameSavePassCheckpoint(ref bool __runOriginal)
+        {
+            if (ArchipelagoClient.IsActive)
+                __runOriginal = false;
         }
     }
 }
