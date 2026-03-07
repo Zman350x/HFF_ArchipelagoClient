@@ -25,7 +25,7 @@ namespace HffArchipelagoClient
             barrierRenderer.material.SetColor("_Color", new Color(0.31f, 0.91f, 1.0f, 0.33f));
             barrierRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             barrierRenderer.receiveShadows = false;
-            barrierBase.transform.localScale = new Vector3(1.0f, 1.0f, 1.0f);
+            barrierBase.transform.localScale = Vector3.one;
             barrierBase.GetComponent<Collider>().enabled = true;
             GameObject.DontDestroyOnLoad(barrierBase);
             barrierBase.SetActive(false);

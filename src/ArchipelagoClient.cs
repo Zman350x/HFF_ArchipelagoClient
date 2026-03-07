@@ -6,7 +6,7 @@ namespace HffArchipelagoClient
     using HarmonyLib;
     using UnityEngine.SceneManagement;
 
-    [BepInPlugin("top.zman350x.hff.archipelagoclient", "Human: Fall Flat Archipelago Client", "0.0.1")]
+    [BepInPlugin("top.zman350x.hff.archipelagoclient", "Human: Fall Flat Archipelago Client", "0.1.0")]
     [BepInProcess("Human.exe")]
     public sealed class ArchipelagoClient : BaseUnityPlugin
     {
@@ -26,7 +26,7 @@ namespace HffArchipelagoClient
 
             SceneManager.sceneLoaded += OnSceneLoaded;
             Harmony.CreateAndPatchAll(typeof(ArchipelagoClient), "ArchipelagoClient");
-            HubWorld.Patch();
+            LoadingTools.Patch();
         }
 
         private static void OnStartup()
@@ -39,9 +39,26 @@ namespace HffArchipelagoClient
             if (!MenuSystem.CanInvoke)
                 return;
 
+            LevelSource.FetchEnabledLevels(new WorkshopItemSource[] {
+                WorkshopItemSource.BuiltIn,
+                WorkshopItemSource.EditorPick,
+                WorkshopItemSource.BuiltInLobbies
+            });
+            ControlLockSource.FetchEnabledControlLocks(new ControlType[] {
+                ControlType.GRAB_LEFT,
+                ControlType.GRAB_RIGHT,
+                ControlType.JUMP,
+                ControlType.PLAY_DEAD,
+                ControlType.LOOK_LEFT,
+                ControlType.LOOK_RIGHT,
+                ControlType.LOOK_UP,
+                ControlType.LOOK_DOWN,
+                ControlType.SHOOT_FIREWORKS
+            });
+
             InputLimiter.Patch();
-            Shell.RegisterCommand("hub", new Action(HubWorld.LoadHubWorld), "hub\r\nGo to the Archipelago hub");
-            MenuButtonTools.AddButton("PauseMenu", "HubButton", "EXIT TO ARCHIPELAGO HUB", 7, () => {
+            Shell.RegisterCommand("hub", new Action(HubWorld.LoadHubWorld), "hub\r\nReturn to the Archipelago hub");
+            MenuButtonTools.AddButton("PauseMenu", "HubButton", "RETURN TO ARCHIPELAGO HUB", 7, () => {
                     Game.instance.Resume();
                     MenuSystem.instance.HideMenus();
                     HubWorld.LoadHubWorld();
@@ -69,7 +86,7 @@ namespace HffArchipelagoClient
                 return;
             }
 
-            if (scene.path == HubWorld.emptySceneName &&
+            if (scene.path == LoadingTools.emptySceneName &&
                 Game.instance.currentLevelType == WorkshopItemSource.NotSpecified &&
                 Multiplayer.App.state != Multiplayer.AppSate.Menu)
             {

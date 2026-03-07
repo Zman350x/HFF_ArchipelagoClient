@@ -1,98 +1,101 @@
 using System;
-using System.Reflection;
-using System.Reflection.Emit;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace HffArchipelagoClient
 {
     using UnityEngine;
     using HumanAPI;
-    using HarmonyLib;
     using UnityEngine.Events;
 
     public static class HubWorld
     {
-        public static readonly string emptySceneName = "Assets/Scenes/Empty.unity";
 
-        private static GameObject levelObject;
-        private static Level level;
+        private static GameObject hubLevelObject;
+        private static Level hubLevel;
+        private static LevelSource hubLevelSource = new LevelSource(
+            new WorkshopLevelMetadata {
+                itemType = WorkshopItemType.Level,
+                workshopId = ulong.MaxValue - 1,
+                title = "Archipelago Hub",
+                levelType = WorkshopItemSource.NotSpecified
+            }, true);
 
         public static void LoadHubWorld()
         {
-            Multiplayer.App.instance.LaunchSinglePlayer(ulong.MaxValue - 1, WorkshopItemSource.NotSpecified, 0, 0);
+            LoadingTools.LoadLevel(hubLevelSource.levelData);
         }
 
         public static void OnHubWorldLoaded()
         {
             // Create and deactivate a new root game object
-            levelObject = new GameObject("Level");
-            levelObject.SetActive(false);
+            hubLevelObject = new GameObject("Level");
+            hubLevelObject.SetActive(false);
 
-            level = levelObject.AddComponent<Level>();
+            // Add level component; must be done while the game object is disabled
+            hubLevel = hubLevelObject.AddComponent<Level>();
 
+            // Add things to the scene
+            AddRequiredLevelObjects();
+            AddLighting();
+            AddGeometry();
+
+            int portals = LevelSource.EnabledLevels.Count;
+
+            for (int i = 0; i < portals; ++i)
+            {
+                double angle = (2 * Math.PI * i) / portals;
+                Vector3 position = new Vector3((float) Math.Sin(angle), 0.0f, (float) Math.Cos(angle));
+                Vector3 rotation = new Vector3(0.0f, (float) (Mathf.Rad2Deg * angle), 0.0f);
+                Portal.CreatePortal(hubLevelObject.transform, position * 30, rotation, LevelSource.EnabledLevels[i]);
+            }
+
+            // Activate the level game object only after everything is setup
+            hubLevelObject.SetActive(true);
+        }
+
+        private static void AddRequiredLevelObjects()
+        {
             GameObject spawnpoint = new GameObject("Spawnpoint");
-            spawnpoint.transform.SetParent(levelObject.transform);
-            spawnpoint.GetComponent<Transform>().localPosition = Vector3.zero;
+            spawnpoint.transform.SetParent(hubLevelObject.transform);
+            spawnpoint.transform.localPosition = Vector3.zero;
+            spawnpoint.transform.localRotation = Quaternion.identity;
+            spawnpoint.transform.localScale = Vector3.one;
             spawnpoint.AddComponent<Checkpoint>();
-            level.spawnPoint = spawnpoint.transform;
+            hubLevel.spawnPoint = spawnpoint.transform;
 
             GameObject fallTrigger = new GameObject("FallTrigger", typeof(BoxCollider));
-            fallTrigger.transform.SetParent(levelObject.transform);
-            fallTrigger.GetComponent<Transform>().localPosition = new Vector3(0.0f, -30.0f, 0.0f);
+            fallTrigger.transform.SetParent(hubLevelObject.transform);
+            fallTrigger.transform.localPosition = new Vector3(0.0f, -30.0f, 0.0f);
+            fallTrigger.transform.localRotation = Quaternion.identity;
+            fallTrigger.transform.localScale = Vector3.one;
             fallTrigger.GetComponent<BoxCollider>().center = new Vector3(0.0f, -20.0f, 0.0f);
             fallTrigger.GetComponent<BoxCollider>().size = new Vector3(400.0f, 50.0f, 400.0f);
             fallTrigger.GetComponent<BoxCollider>().isTrigger = true;
             fallTrigger.AddComponent<FallTrigger>().OnFall = new UnityEvent();
-
-            // Activate the game object only after everything is setup
-            levelObject.SetActive(true);
         }
 
-        public static void Patch()
+        private static void AddLighting()
         {
-            Harmony.CreateAndPatchAll(typeof(HubWorld), "HubWorld");
+            GameObject directionalLight = new GameObject("DirectionalLight", typeof(Light));
+            directionalLight.transform.SetParent(hubLevelObject.transform);
+            directionalLight.transform.localPosition = new Vector3(0.0f, 3.0f, 0.0f);
+            directionalLight.transform.localEulerAngles = new Vector3(50.0f, 330.0f, 0.0f);
+            directionalLight.transform.localScale = Vector3.one;
+            directionalLight.GetComponent<Light>().shadows = LightShadows.Soft;
+            directionalLight.GetComponent<Light>().type = LightType.Directional;
         }
 
-        public static void Unpatch()
+        private static void AddGeometry()
         {
-            Harmony.UnpatchID("HubWorld");
-        }
-
-        [HarmonyPatch(typeof(Game), "LoadLevel", MethodType.Enumerator)]
-        [HarmonyTranspiler]
-        private static IEnumerable<CodeInstruction> GameLoadLevelMoveNext(IEnumerable<CodeInstruction> instructions, MethodBase originalMethod)
-        {
-            CodeMatcher codeMatcher = new CodeMatcher(instructions);
-
-            // Get access to the sceneName local variable
-            FieldInfo sceneNameField = AccessTools.GetDeclaredFields(originalMethod.DeclaringType).Single(field => field.Name.Contains("<sceneName>"));
-
-            // Replace "!= ulong.MaxValue" with "<= 0xF000000000000000UL"
-            codeMatcher.MatchEndForward(
-                    new CodeMatch(OpCodes.Ldarg_0),
-                    new CodeMatch(OpCodes.Ldfld),
-                    new CodeMatch(OpCodes.Ldc_I4_M1)
-                ).SetInstructionAndAdvance(new CodeInstruction(OpCodes.Ldc_I8, -(1L<<60)))
-                .RemoveInstruction()
-                .SetOpcodeAndAdvance(OpCodes.Cgt_Un);
-
-            // Change the != to == to check when the level type is unspecified
-            codeMatcher.Start().MatchEndForward(
-                    new CodeMatch(OpCodes.Ldarg_0),
-                    new CodeMatch(OpCodes.Ldfld),
-                    new CodeMatch(OpCodes.Ldc_I4_S, (SByte) WorkshopItemSource.NotSpecified),
-                    new CodeMatch(OpCodes.Beq)
-                ).SetOpcodeAndAdvance(OpCodes.Bne_Un_S);
-
-            // Set the scene name to empty if unspecified level type
-            codeMatcher.InsertAndAdvance(
-                    new CodeInstruction(OpCodes.Ldarg_0),
-                    new CodeInstruction(OpCodes.Ldstr, emptySceneName),
-                    new CodeInstruction(OpCodes.Stfld, sceneNameField)
-                );
-
-            return codeMatcher.Instructions();
+            GameObject tempFloor = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            tempFloor.name = "TempFloor";
+            tempFloor.transform.SetParent(hubLevelObject.transform);
+            Renderer tempFloorRenderer = tempFloor.GetComponent<Renderer>();
+            StandardShaderUtils.ChangeRenderMode(tempFloorRenderer.material, StandardShaderUtils.BlendMode.Opaque);
+            tempFloorRenderer.material.SetColor("_Color", new Color(0.0f, 0.4f, 0.0f, 1.0f));
+            tempFloor.transform.localPosition = Vector3.zero;
+            tempFloor.transform.localRotation = Quaternion.identity;
+            tempFloor.transform.localScale = Vector3.one * 7;
+            tempFloor.GetComponent<Collider>().enabled = true;
         }
     }
 }

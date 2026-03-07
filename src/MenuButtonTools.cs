@@ -15,9 +15,9 @@ namespace HffArchipelagoClient
         static MenuButtonTools()
         {
             font = Resources.FindObjectsOfTypeAll<TMP_FontAsset>()
-                .Single(font => font.name == "Menu SDF");
+                .Where(font => font.name == "Menu SDF").First();
             fontMaterial = Resources.FindObjectsOfTypeAll<Material>()
-                .Single(material => material.name == "Menu SDF Material");
+                .Where(material => material.name == "Menu SDF Material").First();
         }
 
         public static void AddButton(string menu, string name, string text, int order, UnityAction callback)
@@ -73,7 +73,7 @@ namespace HffArchipelagoClient
             RectTransform textRect = buttonText.GetComponent<RectTransform>();
             textRect.anchorMin = Vector2.zero;
             textRect.anchorMax = Vector2.one;
-            textRect.anchoredPosition3D = Vector2.zero;
+            textRect.anchoredPosition3D = Vector3.zero;
             textRect.offsetMax = new Vector2(-20.0f, 0.0f);
             textRect.offsetMin = new Vector2(20.0f, 0.0f);
         }

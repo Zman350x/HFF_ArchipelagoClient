@@ -4,15 +4,6 @@ namespace HffArchipelagoClient
 
     public static class InputLimiter
     {
-        public static bool canGrabLeft = false;
-        public static bool canGrabRight = false;
-        public static bool canJump = false;
-        public static bool canPlayDead = false;
-        public static bool canLookLeft = false;
-        public static bool canLookRight = false;
-        public static bool canLookUp = false;
-        public static bool canLookDown = false;
-        public static bool canShootFireworks = false;
 
         public static void Patch()
         {
@@ -33,31 +24,31 @@ namespace HffArchipelagoClient
             switch (__instance.Name)
             {
                 case "Left Hand":
-                    __runOriginal = canGrabLeft;
+                    __runOriginal = ControlLockSource.EnabledControlLocks[(int) ControlType.GRAB_LEFT].IsUnlocked();
                     break;
                 case "Right Hand":
-                    __runOriginal = canGrabRight;
+                    __runOriginal = ControlLockSource.EnabledControlLocks[(int) ControlType.GRAB_RIGHT].IsUnlocked();
                     break;
                 case "Jump":
-                    __runOriginal = canJump;
+                    __runOriginal = ControlLockSource.EnabledControlLocks[(int) ControlType.JUMP].IsUnlocked();
                     break;
                 case "Play Dead":
-                    __runOriginal = canPlayDead;
+                    __runOriginal = ControlLockSource.EnabledControlLocks[(int) ControlType.PLAY_DEAD].IsUnlocked();
                     break;
                 case "Look Left":
-                    __runOriginal = canLookLeft;
+                    __runOriginal = ControlLockSource.EnabledControlLocks[(int) ControlType.LOOK_LEFT].IsUnlocked();
                     break;
                 case "Look Right":
-                    __runOriginal = canLookRight;
+                    __runOriginal = ControlLockSource.EnabledControlLocks[(int) ControlType.LOOK_RIGHT].IsUnlocked();
                     break;
                 case "Look Up":
-                    __runOriginal = canLookUp;
+                    __runOriginal = ControlLockSource.EnabledControlLocks[(int) ControlType.LOOK_UP].IsUnlocked();
                     break;
                 case "Look Down":
-                    __runOriginal = canLookDown;
+                    __runOriginal = ControlLockSource.EnabledControlLocks[(int) ControlType.LOOK_DOWN].IsUnlocked();
                     break;
                 case "Shoot Fireworks":
-                    __runOriginal = canShootFireworks;
+                    __runOriginal = ControlLockSource.EnabledControlLocks[(int) ControlType.SHOOT_FIREWORKS].IsUnlocked();
                     break;
                 default:
                     break;
