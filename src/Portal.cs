@@ -178,28 +178,28 @@ namespace HffArchipelagoClient
 
                 // Extra Dreams
                 case "Assets/ContestLevels/ThermalAssets/Thermal.unity":
-                    position = new Vector3(0.0f, 0.0f, 0.0f);
-                    rotation = new Vector3(0.0f, 0.0f, 0.0f);
+                    position = new Vector3(-7.1f, 1.21f, -3.3f);
+                    rotation = new Vector3(0.0f, 240.0f, 0.0f);
                     break;
                 case "Assets/ContestLevels/FactoryAssets/Factory.unity":
-                    position = new Vector3(0.0f, 0.0f, 0.0f);
-                    rotation = new Vector3(0.0f, 0.0f, 0.0f);
+                    position = new Vector3(11.07f, 6.238f, -4.3f);
+                    rotation = new Vector3(0.0f, 90.0f, 359.3f);
                     break;
                 case "Assets/ContestLevels/GolfAssets/Golf.unity":
-                    position = new Vector3(0.0f, 0.0f, 0.0f);
-                    rotation = new Vector3(0.0f, 0.0f, 0.0f);
+                    position = new Vector3(-19.0f, 10.52f, -16.2f);
+                    rotation = new Vector3(0.0f, 245.0f, 0.0f);
                     break;
                 case "Assets/ContestLevels/CityAssets/City.unity":
-                    position = new Vector3(0.0f, 0.0f, 0.0f);
-                    rotation = new Vector3(0.0f, 0.0f, 0.0f);
+                    position = new Vector3(-128.0f, 56.95f, -26.25f);
+                    rotation = new Vector3(0.0f, 270.0f, 0.0f);
 					break;
                 case "Assets/ContestLevels/ForestAssets/Forest.unity":
-                    position = new Vector3(0.0f, 0.0f, 0.0f);
-                    rotation = new Vector3(0.0f, 0.0f, 0.0f);
+                    position = new Vector3(26.8f, 5.3f, -34.4f);
+                    rotation = new Vector3(0.0f, 170.0f, 0.0f);
 					break;
                 case "Assets/ContestLevels/LabAssets/Lab.unity":
-                    position = new Vector3(0.0f, 0.0f, 0.0f);
-                    rotation = new Vector3(0.0f, 0.0f, 0.0f);
+                    position = new Vector3(-192.54f, 1.5f, -88.7f);
+                    rotation = new Vector3(0.0f, 180.0f, 0.0f);
 					break;
                 case "Assets/ContestLevels/LumberAssets/Lumber.unity":
                     position = new Vector3(0.0f, 0.0f, 0.0f);
@@ -250,8 +250,8 @@ namespace HffArchipelagoClient
                     rotation = new Vector3(0.0f, 0.0f, 0.0f);
 					break;
                 case "Assets/ContestLevels/Punk/SteamPunk.unity":
-                    position = new Vector3(0.0f, 0.0f, 0.0f);
-                    rotation = new Vector3(0.0f, 0.0f, 0.0f);
+                    position = new Vector3(-62.78f, -4.585f, -42.0f);
+                    rotation = new Vector3(0.0f, 315.0f, 0.0f);
 					break;
                 case "Assets/ContestLevels/VikingAssets/Viking.unity":
                     position = new Vector3(0.0f, 0.0f, 0.0f);
@@ -260,20 +260,20 @@ namespace HffArchipelagoClient
 
                 // Lobbies
                 case "Assets/WorkShop/Scenes/Levels/WorkshopLobby.unity":
-                    position = new Vector3(0.0f, 0.0f, 0.0f);
-                    rotation = new Vector3(0.0f, 0.0f, 0.0f);
+                    position = new Vector3(-17.0f, -4.425f, -13.0f);
+                    rotation = new Vector3(0.0f, 345.0f, 0.0f);
 					break;
                 case "Assets/Scenes/Lobby.unity":
-                    position = new Vector3(0.0f, 0.0f, 0.0f);
+                    position = new Vector3(14.5f, 3.0f, 49.5f);
                     rotation = new Vector3(0.0f, 0.0f, 0.0f);
 					break;
                 case "Assets/Scenes/Special/Xmas.unity":
-                    position = new Vector3(0.0f, 0.0f, 0.0f);
-                    rotation = new Vector3(0.0f, 0.0f, 0.0f);
+                    position = new Vector3(2.3f, 0.08f, 7.45f);
+                    rotation = new Vector3(0.0f, 328.0f, 0.0f);
 					break;
                 case "Assets/Scenes/Lobbies/Zodiac.unity":
-                    position = new Vector3(0.0f, 0.0f, 0.0f);
-                    rotation = new Vector3(0.0f, 0.0f, 0.0f);
+                    position = new Vector3(-1.8f, -36.0f, 16.8f);
+                    rotation = new Vector3(0.0f, 270.0f, 0.0f);
 					break;
                 default:
                     break;
