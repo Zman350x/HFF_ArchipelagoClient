@@ -24,6 +24,16 @@ namespace HffArchipelagoClient
 
             commands = (CommandRegistry) AccessTools.DeclaredField(typeof(Shell), "commands").GetValue(null);
 
+#if DEBUG
+            Shell.RegisterCommand("scenes", (string x) => {
+                for(int i = 0; i < SceneManager.sceneCountInBuildSettings; i++)
+                {
+                    string scenePath = SceneUtility.GetScenePathByBuildIndex(i);
+                    Shell.print($"{scenePath}");
+                }
+            }, "scenes\r\nList all scenes");
+#endif
+
             SceneManager.sceneLoaded += OnSceneLoaded;
             Harmony.CreateAndPatchAll(typeof(ArchipelagoClient), "ArchipelagoClient");
             LoadingTools.Patch();
@@ -96,11 +106,18 @@ namespace HffArchipelagoClient
                 return;
             }
 
+            if (Game.instance.currentLevelType == WorkshopItemSource.BuiltInLobbies ||
+                Game.instance.currentLevelType == WorkshopItemSource.SubscriptionLobbies)
+            {
+                Multiplayer.MultiplayerLobbyController.instance.HideUI();
+            }
+
             if (IsActive)
             {
                 MenuButtonTools.EnableDisableButton("PauseMenu", "HubButton", true);
                 MenuButtonTools.EnableDisableButton("PauseMenu", "ExitButton", false);
                 Barrier.OnSceneLoaded(scene, mode);
+                Portal.OnSceneLoaded(scene, mode);
             }
         }
 

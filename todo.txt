@@ -1,0 +1,15 @@
+Reset camera on start
+Add portals to levels
+Move barriers into level GameObject
+Disable cheat commands
+Portal visuals (indicates completion?)
+Hub visuals
+Barrier visuals
+Make barrier source
+Achievement tracking
+Fix christmas lobby (snowboard & fireworks)
+Voiceline tracking
+Deathlink
+APWorld
+Archipelago networking
+Sound

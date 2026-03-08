@@ -3,6 +3,7 @@ using System.Linq;
 namespace HffArchipelagoClient
 {
     using UnityEngine;
+    using UnityEngine.SceneManagement;
     using HumanAPI;
     using TMPro;
 
@@ -14,6 +15,33 @@ namespace HffArchipelagoClient
 
         private static TMP_FontAsset font;
         private static Material fontMaterial;
+
+        public void OnTriggerEnter(Collider other)
+        {
+            if (other.tag != "Player")
+                return;
+
+            if (destination.IsUnlocked() && !hasTriggered)
+            {
+                if (destination.levelData.levelType == WorkshopItemSource.NotSpecified &&
+                    destination.levelData.workshopId == ulong.MaxValue - 1)
+                    HubWorld.LoadHubWorld();
+                else
+                    LoadingTools.LoadLevel(destination.levelData);
+
+                hasTriggered = true;
+            }
+        }
+
+        public void OnUnlock(bool IsUnlocked)
+        {
+            portalRenderer.material.SetColor("_Color", IsUnlocked ? Color.green : Color.red);
+        }
+
+        public void OnDestroy()
+        {
+            destination.UnregisterCallback(OnUnlock);
+        }
 
         static Portal()
         {
@@ -91,26 +119,171 @@ namespace HffArchipelagoClient
             return portalParent;
         }
 
-        public void OnTriggerEnter(Collider other)
+        public static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            if (other.tag != "Player")
-                return;
+            Vector3? position = null;
+            Vector3? rotation = null;
 
-            if (destination.IsUnlocked() && !hasTriggered)
+            switch (scene.path)
             {
-                LoadingTools.LoadLevel(destination.levelData);
-                hasTriggered = true;
+                // Main levels
+                case "Assets/Scenes/Levels/Intro.unity":
+                    position = new Vector3(-15.0f, 0.0f, -4.5f);
+                    rotation = new Vector3(0.0f, 270.0f, 0.0f);
+					break;
+                case "Assets/Scenes/Levels/Push.unity":
+                    position = new Vector3(-11.25f, -0.3f, -8.5f);
+                    rotation = new Vector3(0.0f, 0.0f, 0.0f);
+					break;
+                case "Assets/Scenes/Levels/Carry.unity":
+                    position = new Vector3(-12.0f, 0.0f, -4.0f);
+                    rotation = new Vector3(0.0f, 270.0f, 0.0f);
+					break;
+                case "Assets/Scenes/Levels/Climb.unity":
+                    position = new Vector3(-12.0f, 0.0f, -15.0f);
+                    rotation = new Vector3(0.0f, 240.0f, 0.0f);
+					break;
+                case "Assets/Scenes/Levels/Break.unity":
+                    position = new Vector3(9.0f, 3.0f, -4.5f);
+                    rotation = new Vector3(0.0f, 180.0f, 0.0f);
+					break;
+                case "Assets/Scenes/Levels/Siege.unity":
+                    position = new Vector3(94.9f, -10.0f, -42.0f);
+                    rotation = new Vector3(0.0f, 0.0f, 0.0f);
+					break;
+                case "Assets/Scenes/Levels/River.unity":
+                    position = new Vector3(-97.9f, 0.95f, 320.45f);
+                    rotation = new Vector3(5.0f, 230.0f, 354.0f);
+					break;
+                case "Assets/Scenes/Levels/Power.unity":
+                    position = new Vector3(-57.0f, 0.0f, -73.0f);
+                    rotation = new Vector3(0.0f, 180.0f, 0.0f);
+					break;
+                case "Assets/Scenes/Levels/Aztec.unity":
+                    position = new Vector3(66.1f, -0.9f, -60.3f);
+                    rotation = new Vector3(0.0f, 278.0f, 0.0f);
+					break;
+                case "Assets/Scenes/Levels/Halloween.unity":
+                    position = new Vector3(-0.8f, 14.04f, 40.0f);
+                    rotation = new Vector3(0.0f, 0.0f, 0.0f);
+					break;
+                case "Assets/Scenes/SteamExperimental/Steam_merged.unity":
+                    position = new Vector3(-35.3064f, 0.28f, -42.5f);
+                    rotation = new Vector3(0.0f, 0.0f, 357.2f);
+					break;
+                case "Assets/Scenes/Experiments/IceExperimental/Ice_merged.unity":
+                    position = new Vector3(58.0f, 24.61f, -98.0f);
+                    rotation = new Vector3(0.4f, 283.0f, 355.5f);
+					break;
+
+                // Extra Dreams
+                case "Assets/ContestLevels/ThermalAssets/Thermal.unity":
+                    position = new Vector3(0.0f, 0.0f, 0.0f);
+                    rotation = new Vector3(0.0f, 0.0f, 0.0f);
+                    break;
+                case "Assets/ContestLevels/FactoryAssets/Factory.unity":
+                    position = new Vector3(0.0f, 0.0f, 0.0f);
+                    rotation = new Vector3(0.0f, 0.0f, 0.0f);
+                    break;
+                case "Assets/ContestLevels/GolfAssets/Golf.unity":
+                    position = new Vector3(0.0f, 0.0f, 0.0f);
+                    rotation = new Vector3(0.0f, 0.0f, 0.0f);
+                    break;
+                case "Assets/ContestLevels/CityAssets/City.unity":
+                    position = new Vector3(0.0f, 0.0f, 0.0f);
+                    rotation = new Vector3(0.0f, 0.0f, 0.0f);
+					break;
+                case "Assets/ContestLevels/ForestAssets/Forest.unity":
+                    position = new Vector3(0.0f, 0.0f, 0.0f);
+                    rotation = new Vector3(0.0f, 0.0f, 0.0f);
+					break;
+                case "Assets/ContestLevels/LabAssets/Lab.unity":
+                    position = new Vector3(0.0f, 0.0f, 0.0f);
+                    rotation = new Vector3(0.0f, 0.0f, 0.0f);
+					break;
+                case "Assets/ContestLevels/LumberAssets/Lumber.unity":
+                    position = new Vector3(0.0f, 0.0f, 0.0f);
+                    rotation = new Vector3(0.0f, 0.0f, 0.0f);
+					break;
+                case "Assets/ContestLevels/RedRockAssets/RedRock.unity":
+                    position = new Vector3(0.0f, 0.0f, 0.0f);
+                    rotation = new Vector3(0.0f, 0.0f, 0.0f);
+					break;
+                case "Assets/ContestLevels/TowerAssets/Tower.unity":
+                    position = new Vector3(0.0f, 0.0f, 0.0f);
+                    rotation = new Vector3(0.0f, 0.0f, 0.0f);
+					break;
+                case "Assets/ContestLevels/MiniatureAssets/Miniature.unity":
+                    position = new Vector3(0.0f, 0.0f, 0.0f);
+                    rotation = new Vector3(0.0f, 0.0f, 0.0f);
+					break;
+                case "Assets/ContestLevels/CopperWorldAssets/CopperWorld.unity":
+                    position = new Vector3(0.0f, 0.0f, 0.0f);
+                    rotation = new Vector3(0.0f, 0.0f, 0.0f);
+                    break;
+                case "Assets/ContestLevels/NavalAssests/Naval_Ben.unity":
+                    position = new Vector3(0.0f, 0.0f, 0.0f);
+                    rotation = new Vector3(0.0f, 0.0f, 0.0f);
+					break;
+                case "Assets/ContestLevels/UnderwaterAssets/OceanAdventure.unity":
+                    position = new Vector3(0.0f, 0.0f, 0.0f);
+                    rotation = new Vector3(0.0f, 0.0f, 0.0f);
+					break;
+                case "Assets/ContestLevels/DockyardAssets/Dockyard.unity":
+                    position = new Vector3(0.0f, 0.0f, 0.0f);
+                    rotation = new Vector3(0.0f, 0.0f, 0.0f);
+					break;
+                case "Assets/ContestLevels/MuseumAssets/Museum.unity":
+                    position = new Vector3(0.0f, 0.0f, 0.0f);
+                    rotation = new Vector3(0.0f, 0.0f, 0.0f);
+					break;
+                case "Assets/ContestLevels/HikeAssets/Scenes/Hike.unity":
+                    position = new Vector3(0.0f, 0.0f, 0.0f);
+                    rotation = new Vector3(0.0f, 0.0f, 0.0f);
+					break;
+                case "Assets/ContestLevels/CandylandAssets/Candyland.unity":
+                    position = new Vector3(0.0f, 0.0f, 0.0f);
+                    rotation = new Vector3(0.0f, 0.0f, 0.0f);
+					break;
+                case "Assets/ContestLevels/FacilityAssets/Facility.unity":
+                    position = new Vector3(0.0f, 0.0f, 0.0f);
+                    rotation = new Vector3(0.0f, 0.0f, 0.0f);
+					break;
+                case "Assets/ContestLevels/Punk/SteamPunk.unity":
+                    position = new Vector3(0.0f, 0.0f, 0.0f);
+                    rotation = new Vector3(0.0f, 0.0f, 0.0f);
+					break;
+                case "Assets/ContestLevels/VikingAssets/Viking.unity":
+                    position = new Vector3(0.0f, 0.0f, 0.0f);
+                    rotation = new Vector3(0.0f, 0.0f, 0.0f);
+                    break;
+
+                // Lobbies
+                case "Assets/WorkShop/Scenes/Levels/WorkshopLobby.unity":
+                    position = new Vector3(0.0f, 0.0f, 0.0f);
+                    rotation = new Vector3(0.0f, 0.0f, 0.0f);
+					break;
+                case "Assets/Scenes/Lobby.unity":
+                    position = new Vector3(0.0f, 0.0f, 0.0f);
+                    rotation = new Vector3(0.0f, 0.0f, 0.0f);
+					break;
+                case "Assets/Scenes/Special/Xmas.unity":
+                    position = new Vector3(0.0f, 0.0f, 0.0f);
+                    rotation = new Vector3(0.0f, 0.0f, 0.0f);
+					break;
+                case "Assets/Scenes/Lobbies/Zodiac.unity":
+                    position = new Vector3(0.0f, 0.0f, 0.0f);
+                    rotation = new Vector3(0.0f, 0.0f, 0.0f);
+					break;
+                default:
+                    break;
             }
-        }
 
-        public void OnUnlock(bool IsUnlocked)
-        {
-            portalRenderer.material.SetColor("_Color", IsUnlocked ? Color.green : Color.red);
-        }
-
-        public void OnDestroy()
-        {
-            destination.UnregisterCallback(OnUnlock);
+            if (position.HasValue && rotation.HasValue)
+                CreatePortal(FindObjectOfType<Level>().gameObject.transform,
+                             position.Value,
+                             rotation.Value,
+                             HubWorld.hubLevelSource);
         }
     }
 }
