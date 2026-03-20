@@ -9,17 +9,6 @@ namespace HffArchipelagoClient
 
     public static class MenuButtonTools
     {
-        private static TMP_FontAsset font;
-        private static Material fontMaterial;
-
-        static MenuButtonTools()
-        {
-            font = Resources.FindObjectsOfTypeAll<TMP_FontAsset>()
-                .Where(font => font.name == "Menu SDF").First();
-            fontMaterial = Resources.FindObjectsOfTypeAll<Material>()
-                .Where(material => material.name == "Menu SDF Material").First();
-        }
-
         public static void AddButton(string menu, string name, string text, int order, UnityAction callback)
         {
             GameObject menuRoot = GameObject.Find($"/Game(Clone)/Menu/MenuSystem/{menu}(Clone)");
@@ -62,8 +51,8 @@ namespace HffArchipelagoClient
             textContent.color = Color.black;
             textContent.fontSize = 40;
             textContent.fontSizeMax = 40;
-            textContent.font = font;
-            textContent.fontMaterial = fontMaterial;
+            textContent.font = ResourceManager.menuFont;
+            textContent.fontMaterial = ResourceManager.menuFontMaterial;
             textContent.enableWordWrapping = false;
             textContent.enableAutoSizing = true;
             textContent.enableKerning = false;

@@ -1,4 +1,5 @@
-using System.Linq;
+using System;
+using System.Collections;
 
 namespace HffArchipelagoClient
 {
@@ -9,12 +10,36 @@ namespace HffArchipelagoClient
 
     public class Portal : LevelObject
     {
-        LevelSource destination;
-        Renderer portalRenderer;
-        bool hasTriggered = false;
+        public LevelSource destination;
+        public bool hasTriggered = false;
 
-        private static TMP_FontAsset font;
-        private static Material fontMaterial;
+        private Renderer portalRenderer;
+        private float textureAspect;
+
+        public void LateUpdate()
+        {
+            Tuple<Vector2, Vector2> bounds = getScreenSpaceBounds();
+            float objectAspect = (bounds.Item2.x - bounds.Item1.x)/(bounds.Item2.y - bounds.Item1.y);
+
+            float scaleX, scaleY;
+            if (textureAspect > objectAspect)
+            {
+                scaleX = objectAspect / textureAspect;
+                scaleY = 1.0f;
+            }
+            else
+            {
+                scaleX = 1.0f;
+                scaleY = textureAspect / objectAspect;
+            }
+
+            portalRenderer.material.SetFloat("_ObjectScreenMinX", bounds.Item1.x);
+            portalRenderer.material.SetFloat("_ObjectScreenMinY", bounds.Item1.y);
+            portalRenderer.material.SetFloat("_ObjectScreenMaxX", bounds.Item2.x);
+            portalRenderer.material.SetFloat("_ObjectScreenMaxY", bounds.Item2.y);
+            portalRenderer.material.SetFloat("_ScaleX", scaleX);
+            portalRenderer.material.SetFloat("_ScaleY", scaleY);
+        }
 
         public void OnTriggerEnter(Collider other)
         {
@@ -35,7 +60,7 @@ namespace HffArchipelagoClient
 
         public void OnUnlock(bool IsUnlocked)
         {
-            portalRenderer.material.SetColor("_Color", IsUnlocked ? Color.green : Color.red);
+            portalRenderer.material.SetFloat("_IsUnlocked", IsUnlocked ? 1.0f : 0.0f);
         }
 
         public void OnDestroy()
@@ -43,80 +68,83 @@ namespace HffArchipelagoClient
             destination.UnregisterCallback(OnUnlock);
         }
 
-        static Portal()
+        private Tuple<Vector2, Vector2> getScreenSpaceBounds()
         {
-            font = Resources.FindObjectsOfTypeAll<TMP_FontAsset>()
-                .Where(font => font.name == "Menu SDF").First();
-            fontMaterial = Resources.FindObjectsOfTypeAll<Material>()
-                .Where(material => material.name == "Menu SDF Material").First();
+            Vector3 c = portalRenderer.bounds.center;
+            Vector3 e = portalRenderer.bounds.extents;
+
+            Vector3[] corners = new Vector3[8]
+            {
+                Camera.main.WorldToViewportPoint(c + new Vector3( e.x,  e.y,  e.z)),
+                Camera.main.WorldToViewportPoint(c + new Vector3(-e.x,  e.y,  e.z)),
+                Camera.main.WorldToViewportPoint(c + new Vector3( e.x, -e.y,  e.z)),
+                Camera.main.WorldToViewportPoint(c + new Vector3(-e.x, -e.y,  e.z)),
+                Camera.main.WorldToViewportPoint(c + new Vector3( e.x,  e.y, -e.z)),
+                Camera.main.WorldToViewportPoint(c + new Vector3(-e.x,  e.y, -e.z)),
+                Camera.main.WorldToViewportPoint(c + new Vector3( e.x, -e.y, -e.z)),
+                Camera.main.WorldToViewportPoint(c + new Vector3(-e.x, -e.y, -e.z)),
+            };
+
+            Vector3 min = corners[0];
+            Vector3 max = corners[0];
+            foreach (Vector3 corner in corners)
+            {
+                min = Vector3.Min(min, corner);
+                max = Vector3.Max(max, corner);
+            }
+
+            return new Tuple<Vector2, Vector2>(min, max);
         }
 
         public static GameObject CreatePortal(Transform parent, Vector3 position, Vector3 rotation, LevelSource destination)
         {
-            GameObject portalParent = new GameObject($"Portal to {destination.levelData.title}");
+            GameObject portalParent = Instantiate(ResourceManager.PortalPrefab);
+            portalParent.name = $"Portal to {destination.levelData.title}";
             portalParent.transform.SetParent(parent);
             portalParent.transform.localPosition = position;
             portalParent.transform.localEulerAngles = rotation;
             portalParent.transform.localScale = Vector3.one;
 
-            GameObject portalBody = new GameObject("PortalBody", typeof(BoxCollider));
-            portalBody.transform.SetParent(portalParent.transform);
-            portalBody.transform.localPosition = new Vector3(0.0f, 0.9f, 0.0f);
-            portalBody.transform.localRotation = Quaternion.identity;
-            portalBody.transform.localScale = Vector3.one;
-            portalBody.GetComponent<BoxCollider>().center = Vector3.zero;
-            portalBody.GetComponent<BoxCollider>().size = new Vector3(1.0f, 1.8f, 1.0f);
-            portalBody.GetComponent<BoxCollider>().isTrigger = true;
-            Portal portalComponent = portalBody.AddComponent<Portal>();
+            GameObject portalBase = portalParent.GetComponentInChildren<BoxCollider>().gameObject;
+            Portal portalComponent = portalBase.AddComponent<Portal>();
             portalComponent.destination = destination;
-
-            GameObject portalSpawn = new GameObject("PortalSpawnpoint");
-            portalSpawn.transform.SetParent(portalParent.transform);
-            portalSpawn.transform.localPosition = new Vector3(0.0f, 0.0f, -3.0f);
-            portalSpawn.transform.rotation = Quaternion.identity;
-            portalSpawn.transform.localScale = Vector3.one;
-
-            // NOTE: Everything after here is temporary
-
-            GameObject portalRendererObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            portalRendererObj.name = "PortalRenderer";
-            portalRendererObj.transform.SetParent(portalParent.transform);
-            portalRendererObj.transform.localPosition = new Vector3(0.0f, 0.9f, 0.0f);
-            portalRendererObj.transform.localRotation = Quaternion.identity;
-            portalRendererObj.transform.localScale = new Vector3(1.0f, 1.8f, 1.0f);
-            portalRendererObj.GetComponent<Collider>().enabled = false;
-
-            portalComponent.portalRenderer = portalRendererObj.GetComponent<Renderer>();
-            StandardShaderUtils.ChangeRenderMode(portalComponent.portalRenderer.material, StandardShaderUtils.BlendMode.Opaque);
-            portalComponent.portalRenderer.material.SetColor("_Color", destination.IsUnlocked() ? Color.green : Color.red);
-            portalComponent.portalRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            portalComponent.portalRenderer.receiveShadows = false;
-
             destination.RegisterCallback(portalComponent.OnUnlock);
 
-            GameObject portalText = new GameObject("TextMeshPro Text", typeof(RectTransform),
-                                                                       typeof(MeshRenderer),
-                                                                       typeof(TextMeshPro));
+            portalComponent.portalRenderer = portalBase.GetComponent<Renderer>();
+            if (destination.levelData.thumbnailTexture != null)
+            {
+                portalComponent.portalRenderer.material.SetTexture(Shader.PropertyToID("_MainTex"), destination.levelData.thumbnailTexture);
+                portalComponent.textureAspect = (float) destination.levelData.thumbnailTexture.width / (float) destination.levelData.thumbnailTexture.height;
+            }
+            portalComponent.portalRenderer.material.SetFloat("_IsUnlocked", destination.IsUnlocked() ? 1.0f : 0.0f);
+            portalComponent.portalRenderer.material.color = Color.white;
+            portalComponent.portalRenderer.material.globalIlluminationFlags = MaterialGlobalIlluminationFlags.None;
+            portalComponent.portalRenderer.receiveShadows = false;
+            portalComponent.portalRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
 
-            portalText.transform.SetParent(portalParent.transform);
-            portalText.transform.localEulerAngles = new Vector3(0.0f, 0.0f, 0.0f);
-            portalText.transform.localScale = Vector3.one;
-            portalText.transform.localPosition = new Vector3(0.0f, 2.5f, 0.0f);
-
-            TextMeshPro textContent = portalText.GetComponent<TextMeshPro>();
-            textContent.color = Color.black;
-            textContent.fontSizeMin = 10;
-            textContent.fontSize = 10;
-            textContent.fontSizeMax = 10;
-            textContent.font = font;
-            textContent.fontMaterial = fontMaterial;
-            textContent.enableWordWrapping = false;
-            textContent.enableAutoSizing = true;
-            textContent.enableKerning = false;
-            textContent.alignment = TextAlignmentOptions.Center;
-            textContent.text = destination.levelData.title;
+            GameObject portalText = portalParent.GetComponentInChildren<RectTransform>().gameObject;
+            TextMeshPro textContent = portalText.AddComponent<TextMeshPro>();
+            ArchipelagoClient.Instance.StartCoroutine(SetPortalText(textContent, destination.levelData.title));
 
             return portalParent;
+        }
+
+        private static IEnumerator SetPortalText(TextMeshPro textContent, string text)
+        {
+            yield return null;
+
+            textContent.color = new Color(0.4549f, 0.4549f, 0.4549f, 1.0f);
+            textContent.alignment = TextAlignmentOptions.Center;
+            textContent.fontSizeMin = 2;
+            textContent.fontSizeMax = 4;
+            textContent.font = ResourceManager.goodDogFont;
+            textContent.fontMaterial = ResourceManager.goodDogFontMaterial;
+            textContent.enableWordWrapping = true;
+            textContent.enableAutoSizing = true;
+            textContent.enableKerning = false;
+            textContent.text = text;
+
+            textContent.gameObject.GetComponent<RectTransform>().sizeDelta = new Vector2(1.1f, 0.47f);
         }
 
         public static void OnSceneLoaded(Scene scene, LoadSceneMode mode)

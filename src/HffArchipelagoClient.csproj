@@ -13,5 +13,10 @@
     <Reference Include="UnityEngine.UI" />
     <Reference Include="UnityEngine.UIModule" />
     <Reference Include="UnityEngine.PhysicsModule" />
+    <Reference Include="UnityEngine.ImageConversionModule" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="$(ResourceDir)\archipelago" />
+    <EmbeddedResource Include="$(ResourceDir)\HubWorldThumbnail.png" />
   </ItemGroup>
 </Project>
