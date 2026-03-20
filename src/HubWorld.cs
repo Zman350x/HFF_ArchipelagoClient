@@ -22,7 +22,8 @@ namespace HffArchipelagoClient
                 workshopId = ulong.MaxValue - 1,
                 title = "Archipelago Hub",
                 levelType = WorkshopItemSource.NotSpecified,
-                cachedThumbnail = ResourceManager.HubWorldThumbnail
+                cachedThumbnail = ResourceManager.HubWorldThumbnail,
+                folder = "none"
             }, true);
 
         public static void LoadHubWorld()

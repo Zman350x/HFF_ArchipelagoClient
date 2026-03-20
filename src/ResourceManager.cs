@@ -47,6 +47,7 @@ namespace HffArchipelagoClient
             hubWorldThumbnailStream.Read(hubWorldThumbnailBytes, 0, hubWorldThumbnailBytes.Length);
             HubWorldThumbnail = new Texture2D(1, 1);
             HubWorldThumbnail.LoadImage(hubWorldThumbnailBytes);
+            HubWorldThumbnail.name = "HubWorldThumbnail";
         }
     }
 }
