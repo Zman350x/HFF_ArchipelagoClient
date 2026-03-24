@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 
 namespace HffArchipelagoClient
@@ -14,31 +13,24 @@ namespace HffArchipelagoClient
         public bool hasTriggered = false;
 
         private Renderer portalRenderer;
-        private float textureAspect;
+        private float mainTextureAspect;
+        private float lockTextureAspect;
+
+        private const int THREAD_GROUP_SIZE = 64;
+        private ComputeShader boundsCompute;
+        private ComputeBuffer vertexBuffer;
+        private ComputeBuffer groupResultsBuffer;
+        private ComputeBuffer finalBoundsBuffer;
+        private int findKernel;
+        private int reduceKernel;
+        private int groupCount;
 
         public void LateUpdate()
         {
-            Tuple<Vector2, Vector2> bounds = getScreenSpaceBounds();
-            float objectAspect = (bounds.Item2.x - bounds.Item1.x)/(bounds.Item2.y - bounds.Item1.y);
-
-            float scaleX, scaleY;
-            if (textureAspect > objectAspect)
-            {
-                scaleX = objectAspect / textureAspect;
-                scaleY = 1.0f;
-            }
-            else
-            {
-                scaleX = 1.0f;
-                scaleY = textureAspect / objectAspect;
-            }
-
-            portalRenderer.material.SetFloat("_ObjectScreenMinX", bounds.Item1.x);
-            portalRenderer.material.SetFloat("_ObjectScreenMinY", bounds.Item1.y);
-            portalRenderer.material.SetFloat("_ObjectScreenMaxX", bounds.Item2.x);
-            portalRenderer.material.SetFloat("_ObjectScreenMaxY", bounds.Item2.y);
-            portalRenderer.material.SetFloat("_ScaleX", scaleX);
-            portalRenderer.material.SetFloat("_ScaleY", scaleY);
+            Matrix4x4 worldToViewport = Camera.main.projectionMatrix * Camera.main.worldToCameraMatrix;
+            boundsCompute.SetMatrix("_WorldToViewport", worldToViewport);
+            boundsCompute.Dispatch(findKernel, groupCount, 1, 1);
+            boundsCompute.Dispatch(reduceKernel, 1, 1, 1);
         }
 
         public void OnTriggerEnter(Collider other)
@@ -66,34 +58,9 @@ namespace HffArchipelagoClient
         public void OnDestroy()
         {
             destination.UnregisterCallback(OnUnlock);
-        }
-
-        private Tuple<Vector2, Vector2> getScreenSpaceBounds()
-        {
-            Vector3 c = portalRenderer.bounds.center;
-            Vector3 e = portalRenderer.bounds.extents;
-
-            Vector3[] corners = new Vector3[8]
-            {
-                Camera.main.WorldToViewportPoint(c + new Vector3( e.x,  e.y,  e.z)),
-                Camera.main.WorldToViewportPoint(c + new Vector3(-e.x,  e.y,  e.z)),
-                Camera.main.WorldToViewportPoint(c + new Vector3( e.x, -e.y,  e.z)),
-                Camera.main.WorldToViewportPoint(c + new Vector3(-e.x, -e.y,  e.z)),
-                Camera.main.WorldToViewportPoint(c + new Vector3( e.x,  e.y, -e.z)),
-                Camera.main.WorldToViewportPoint(c + new Vector3(-e.x,  e.y, -e.z)),
-                Camera.main.WorldToViewportPoint(c + new Vector3( e.x, -e.y, -e.z)),
-                Camera.main.WorldToViewportPoint(c + new Vector3(-e.x, -e.y, -e.z)),
-            };
-
-            Vector3 min = corners[0];
-            Vector3 max = corners[0];
-            foreach (Vector3 corner in corners)
-            {
-                min = Vector3.Min(min, corner);
-                max = Vector3.Max(max, corner);
-            }
-
-            return new Tuple<Vector2, Vector2>(min, max);
+            vertexBuffer?.Release();
+            groupResultsBuffer?.Release();
+            finalBoundsBuffer?.Release();
         }
 
         public static GameObject CreatePortal(Transform parent, Vector3 position, Vector3 rotation, LevelSource destination)
@@ -105,22 +72,51 @@ namespace HffArchipelagoClient
             portalParent.transform.localEulerAngles = rotation;
             portalParent.transform.localScale = Vector3.one;
 
-            GameObject portalBase = portalParent.GetComponentInChildren<BoxCollider>().gameObject;
-            Portal portalComponent = portalBase.AddComponent<Portal>();
+            GameObject portalBody = portalParent.GetComponentInChildren<BoxCollider>().gameObject;
+            Portal portalComponent = portalBody.AddComponent<Portal>();
             portalComponent.destination = destination;
             destination.RegisterCallback(portalComponent.OnUnlock);
 
-            portalComponent.portalRenderer = portalBase.GetComponent<Renderer>();
+            portalComponent.portalRenderer = portalBody.GetComponent<Renderer>();
             if (destination.levelData.thumbnailTexture != null)
             {
                 portalComponent.portalRenderer.material.SetTexture(Shader.PropertyToID("_MainTex"), destination.levelData.thumbnailTexture);
-                portalComponent.textureAspect = (float) destination.levelData.thumbnailTexture.width / (float) destination.levelData.thumbnailTexture.height;
+                portalComponent.mainTextureAspect = (float) destination.levelData.thumbnailTexture.width / (float) destination.levelData.thumbnailTexture.height;
+            }
+            if (ResourceManager.LockTexture != null)
+            {
+                portalComponent.portalRenderer.material.SetTexture(Shader.PropertyToID("_LockTex"), ResourceManager.LockTexture);
+                portalComponent.lockTextureAspect = (float) ResourceManager.LockTexture.width / (float) ResourceManager.LockTexture.height;
             }
             portalComponent.portalRenderer.material.SetFloat("_IsUnlocked", destination.IsUnlocked() ? 1.0f : 0.0f);
             portalComponent.portalRenderer.material.color = Color.white;
             portalComponent.portalRenderer.material.globalIlluminationFlags = MaterialGlobalIlluminationFlags.None;
             portalComponent.portalRenderer.receiveShadows = false;
             portalComponent.portalRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+
+            portalComponent.boundsCompute = Instantiate(ResourceManager.BoundsCompute);
+            Vector3[] vertices = portalBody.GetComponent<MeshFilter>().mesh.vertices;
+            for (int i = 0; i < vertices.Length; ++i)
+            {
+                vertices[i] = portalBody.transform.TransformPoint(vertices[i]);
+            }
+            portalComponent.groupCount = Mathf.CeilToInt(vertices.Length / (float) THREAD_GROUP_SIZE);
+            portalComponent.vertexBuffer = new ComputeBuffer(vertices.Length, sizeof(float) * 3);
+            portalComponent.vertexBuffer.SetData(vertices);
+
+            portalComponent.groupResultsBuffer = new ComputeBuffer(portalComponent.groupCount, sizeof(float) * 4);
+            portalComponent.finalBoundsBuffer = new ComputeBuffer(1, sizeof(float) * 4);
+
+            portalComponent.findKernel = portalComponent.boundsCompute.FindKernel("FindBounds");
+            portalComponent.boundsCompute.SetBuffer(portalComponent.findKernel, "_Vertices", portalComponent.vertexBuffer);
+            portalComponent.boundsCompute.SetBuffer(portalComponent.findKernel, "_GroupResults", portalComponent.groupResultsBuffer);
+
+            portalComponent.reduceKernel = portalComponent.boundsCompute.FindKernel("ReduceBounds");
+            portalComponent.boundsCompute.SetBuffer(portalComponent.reduceKernel, "_GroupResults", portalComponent.groupResultsBuffer);
+            portalComponent.boundsCompute.SetBuffer(portalComponent.reduceKernel, "_FinalBounds", portalComponent.finalBoundsBuffer);
+            portalComponent.boundsCompute.SetInt("_GroupCount", portalComponent.groupCount);
+
+            portalComponent.portalRenderer.material.SetBuffer("_BoundsBuffer", portalComponent.finalBoundsBuffer);
 
             GameObject portalText = portalParent.GetComponentInChildren<RectTransform>().gameObject;
             TextMeshPro textContent = portalText.AddComponent<TextMeshPro>();
@@ -184,7 +180,7 @@ namespace HffArchipelagoClient
                     rotation = new Vector3(5.0f, 230.0f, 354.0f);
 					break;
                 case "Assets/Scenes/Levels/Power.unity":
-                    position = new Vector3(-57.0f, 0.0f, -73.0f);
+                    position = new Vector3(-57.0f, 0.0f, -72.8f);
                     rotation = new Vector3(0.0f, 180.0f, 0.0f);
 					break;
                 case "Assets/Scenes/Levels/Aztec.unity":
