@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 
 namespace HffArchipelagoClient
@@ -13,8 +14,6 @@ namespace HffArchipelagoClient
         public bool hasTriggered = false;
 
         private Renderer portalRenderer;
-        private float mainTextureAspect;
-        private float lockTextureAspect;
 
         private const int THREAD_GROUP_SIZE = 64;
         private ComputeShader boundsCompute;
@@ -81,12 +80,12 @@ namespace HffArchipelagoClient
             if (destination.levelData.thumbnailTexture != null)
             {
                 portalComponent.portalRenderer.material.SetTexture(Shader.PropertyToID("_MainTex"), destination.levelData.thumbnailTexture);
-                portalComponent.mainTextureAspect = (float) destination.levelData.thumbnailTexture.width / (float) destination.levelData.thumbnailTexture.height;
+                portalComponent.portalRenderer.material.SetFloat("_MainTextureAspect", (float) destination.levelData.thumbnailTexture.width / (float) destination.levelData.thumbnailTexture.height);
             }
             if (ResourceManager.LockTexture != null)
             {
                 portalComponent.portalRenderer.material.SetTexture(Shader.PropertyToID("_LockTex"), ResourceManager.LockTexture);
-                portalComponent.lockTextureAspect = (float) ResourceManager.LockTexture.width / (float) ResourceManager.LockTexture.height;
+                portalComponent.portalRenderer.material.SetFloat("_LockTextureAspect", (float) ResourceManager.LockTexture.width / (float) ResourceManager.LockTexture.height);
             }
             portalComponent.portalRenderer.material.SetFloat("_IsUnlocked", destination.IsUnlocked() ? 1.0f : 0.0f);
             portalComponent.portalRenderer.material.color = Color.white;
@@ -135,6 +134,7 @@ namespace HffArchipelagoClient
             textContent.fontSizeMax = 4;
             textContent.font = ResourceManager.goodDogFont;
             textContent.fontMaterial = ResourceManager.goodDogFontMaterial;
+            textContent.fontMaterial.renderQueue = 3001;
             textContent.enableWordWrapping = true;
             textContent.enableAutoSizing = true;
             textContent.enableKerning = false;
@@ -147,6 +147,8 @@ namespace HffArchipelagoClient
         {
             Vector3? position = null;
             Vector3? rotation = null;
+
+            Action<GameObject> onCreation = null;
 
             switch (scene.path)
             {
@@ -203,7 +205,7 @@ namespace HffArchipelagoClient
                 // Extra Dreams
                 case "Assets/ContestLevels/ThermalAssets/Thermal.unity":
                     position = new Vector3(-7.1f, 1.21f, -3.3f);
-                    rotation = new Vector3(0.0f, 240.0f, 0.0f);
+                    rotation = new Vector3(358.0f, 240.0f, 0.0f);
                     break;
                 case "Assets/ContestLevels/FactoryAssets/Factory.unity":
                     position = new Vector3(11.07f, 6.238f, -4.3f);
@@ -256,13 +258,17 @@ namespace HffArchipelagoClient
                 case "Assets/ContestLevels/DockyardAssets/Dockyard.unity":
                     position = new Vector3(-63.545f, -4.2234f, -43.23f);
                     rotation = new Vector3(0.0f, 180.0f, 0.0f);
+                    onCreation = (GameObject portalObj) =>
+                    {
+                        portalObj.GetComponentInChildren<MeshCollider>().gameObject.GetComponent<Renderer>().material.renderQueue = 3000;
+                    };
 					break;
                 case "Assets/ContestLevels/MuseumAssets/Museum.unity":
                     position = new Vector3(38.3f, 0.85f, 27.5f);
                     rotation = new Vector3(0.0f, 90.0f, 0.0f);
 					break;
                 case "Assets/ContestLevels/HikeAssets/Scenes/Hike.unity":
-                    position = new Vector3(-110.77f, -35.025f, -128.93f);
+                    position = new Vector3(-111.0f, -35.025f, -129.0f);
                     rotation = new Vector3(0.0f, 331.4221f, 0.0f);
 					break;
                 case "Assets/ContestLevels/CandylandAssets/Candyland.unity":
@@ -304,10 +310,14 @@ namespace HffArchipelagoClient
             }
 
             if (position.HasValue && rotation.HasValue)
-                CreatePortal(FindObjectOfType<Level>().gameObject.transform,
-                             position.Value,
-                             rotation.Value,
-                             HubWorld.hubLevelSource);
+            {
+                GameObject portalObj = CreatePortal(FindObjectOfType<Level>().gameObject.transform,
+                                                    position.Value,
+                                                    rotation.Value,
+                                                    HubWorld.hubLevelSource);
+
+                onCreation?.Invoke(portalObj);
+            }
         }
     }
 }
