@@ -8,8 +8,9 @@ namespace HffArchipelagoClient
 
     public abstract class Unlockable
     {
+        public event Action<bool> callbacks;
+
         private bool _unlocked = false;
-        private HashSet<Action<bool>> callbacks = new HashSet<Action<bool>>();
 
         public bool IsUnlocked()
         {
@@ -19,21 +20,7 @@ namespace HffArchipelagoClient
         public void SetUnlocked(bool isUnlocked)
         {
             _unlocked = isUnlocked;
-
-            foreach (Action<bool> callback in callbacks)
-            {
-                callback.Invoke(isUnlocked);
-            }
-        }
-
-        public void RegisterCallback(Action<bool> callback)
-        {
-            callbacks.Add(callback);
-        }
-
-        public void UnregisterCallback(Action<bool> callback)
-        {
-            callbacks.Remove(callback);
+            callbacks?.Invoke(isUnlocked);
         }
     }
 

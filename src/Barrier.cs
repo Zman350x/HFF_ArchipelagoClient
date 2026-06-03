@@ -21,7 +21,7 @@ namespace HffArchipelagoClient
             barrierBase.layer = LayerMask.NameToLayer("NoGrab");
             barrierBase.tag = "NoGrab";
             Renderer barrierRenderer = barrierBase.GetComponent<Renderer>();
-            StandardShaderUtils.ChangeRenderMode(barrierRenderer.material, StandardShaderUtils.BlendMode.Transparent);
+            ZmanBase.HelperFunctions.ChangeRenderMode(barrierRenderer.material, ZmanBase.BlendMode.Transparent);
             barrierRenderer.material.SetColor("_Color", new Color(0.31f, 0.91f, 1.0f, 0.33f));
             barrierRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             barrierRenderer.receiveShadows = false;

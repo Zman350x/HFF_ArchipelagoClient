@@ -5,9 +5,11 @@ namespace HffArchipelagoClient
     using UnityEngine;
     using HumanAPI;
     using UnityEngine.Events;
+    using ZmanBase;
 
     public static class HubWorld
     {
+        public static bool loadingHubWorld = false;
 
         private static GameObject hubLevelObject;
         private static Level hubLevel;
@@ -19,10 +21,10 @@ namespace HffArchipelagoClient
         public static readonly LevelSource hubLevelSource = new LevelSource(
             new WorkshopLevelMetadata {
                 itemType = WorkshopItemType.Level,
-                workshopId = ulong.MaxValue - 1,
+                workshopId = LoadingTools.RegisterRuntimeLevel(OnHubWorldLoaded),
                 title = "Archipelago Hub",
                 levelType = WorkshopItemSource.NotSpecified,
-                cachedThumbnail = ResourceManager.HubWorldThumbnail,
+                cachedThumbnail = ArchipelagoResourceManager.HubWorldThumbnail,
                 folder = "none"
             }, true);
 
@@ -31,11 +33,15 @@ namespace HffArchipelagoClient
             previousLevelType = Game.instance.currentLevelType;
             previousLevelNumber = Game.instance.currentLevelNumber;
 
+            loadingHubWorld = true;
             LoadingTools.LoadLevel(hubLevelSource.levelData);
         }
 
         public static void OnHubWorldLoaded()
         {
+            MenuButtonTools.EnableDisableButton("PauseMenu", "HubButton", false);
+            MenuButtonTools.EnableDisableButton("PauseMenu", "ExitButton", true);
+
             // Create and deactivate a new root game object
             hubLevelObject = new GameObject("Level");
             hubLevelObject.SetActive(false);
@@ -104,7 +110,7 @@ namespace HffArchipelagoClient
             tempFloor.name = "TempFloor";
             tempFloor.transform.SetParent(hubLevelObject.transform);
             Renderer tempFloorRenderer = tempFloor.GetComponent<Renderer>();
-            StandardShaderUtils.ChangeRenderMode(tempFloorRenderer.material, StandardShaderUtils.BlendMode.Opaque);
+            HelperFunctions.ChangeRenderMode(tempFloorRenderer.material, BlendMode.Opaque);
             tempFloorRenderer.material.SetColor("_Color", new Color(0.0f, 0.4f, 0.0f, 1.0f));
             tempFloor.transform.localPosition = Vector3.zero;
             tempFloor.transform.localRotation = Quaternion.identity;

@@ -389,5 +389,10 @@
       <HintPath>$(SharedLibsDir)\UnityFbxPrefab.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Update="ZmanBaseMod">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>$(SharedLibsDir)\ZmanBaseMod.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
   </ItemGroup>
 </Project>

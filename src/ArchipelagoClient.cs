@@ -4,16 +4,16 @@ namespace HffArchipelagoClient
 {
     using BepInEx;
     using HarmonyLib;
+    using ZmanBase;
     using UnityEngine.SceneManagement;
 
     [BepInPlugin("top.zman350x.hff.archipelagoclient", "Human: Fall Flat Archipelago Client", "0.1.0")]
+    [BepInDependency("top.zman350x.hff.zmanbase")]
     [BepInProcess("Human.exe")]
     public sealed class ArchipelagoClient : BaseUnityPlugin
     {
         public static ArchipelagoClient Instance { get; private set; }
         public static bool IsActive { get; private set; } = false;
-
-        public static CommandRegistry commands;
 
         internal static new BepInEx.Logging.ManualLogSource Logger;
 
@@ -22,21 +22,10 @@ namespace HffArchipelagoClient
             Instance = this;
             Logger = base.Logger;
 
-            commands = (CommandRegistry) AccessTools.DeclaredField(typeof(Shell), "commands").GetValue(null);
-
-#if DEBUG
-            Shell.RegisterCommand("scenes", (string x) => {
-                for(int i = 0; i < SceneManager.sceneCountInBuildSettings; i++)
-                {
-                    string scenePath = SceneUtility.GetScenePathByBuildIndex(i);
-                    Shell.print($"{scenePath}");
-                }
-            }, "scenes\r\nList all scenes");
-#endif
-
             SceneManager.sceneLoaded += OnSceneLoaded;
+            LoadingTools.StartupEvent += OnStartup;
             Harmony.CreateAndPatchAll(typeof(ArchipelagoClient), "ArchipelagoClient");
-            LoadingTools.Patch();
+            ArchipelagoLoadingTools.Patch();
         }
 
         private static void OnStartup()
@@ -81,7 +70,7 @@ namespace HffArchipelagoClient
         public static void ArchipelagoEnd()
         {
             InputLimiter.Unpatch();
-            commands.UnRegisterCommand("hub", new Action(HubWorld.LoadHubWorld));
+            ZmanBaseMod.Commands.UnRegisterCommand("hub", new Action(HubWorld.LoadHubWorld));
             MenuButtonTools.DestroyButton("PauseMenu", "HubButton");
             MenuButtonTools.EnableDisableButton("PauseMenu", "ExitButton", true);
 
@@ -90,35 +79,15 @@ namespace HffArchipelagoClient
 
         public static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            if (scene.path == "Assets/Scenes/Startup.unity")
-            {
-                OnStartup();
-                return;
-            }
-
-            if (scene.path == LoadingTools.emptySceneName &&
-                Game.instance.currentLevelType == WorkshopItemSource.NotSpecified &&
-                Multiplayer.App.state != Multiplayer.AppSate.Menu)
-            {
-                MenuButtonTools.EnableDisableButton("PauseMenu", "HubButton", false);
-                MenuButtonTools.EnableDisableButton("PauseMenu", "ExitButton", true);
-                HubWorld.OnHubWorldLoaded();
-                return;
-            }
-
-            if (Game.instance.currentLevelType == WorkshopItemSource.BuiltInLobbies ||
-                Game.instance.currentLevelType == WorkshopItemSource.SubscriptionLobbies)
-            {
-                Multiplayer.MultiplayerLobbyController.instance.HideUI();
-            }
-
-            if (IsActive)
+            if (IsActive && !HubWorld.loadingHubWorld)
             {
                 MenuButtonTools.EnableDisableButton("PauseMenu", "HubButton", true);
                 MenuButtonTools.EnableDisableButton("PauseMenu", "ExitButton", false);
                 Barrier.OnSceneLoaded(scene, mode);
                 Portal.OnSceneLoaded(scene, mode);
             }
+
+            HubWorld.loadingHubWorld = false;
         }
 
         [HarmonyPatch(typeof(Multiplayer.App), "ExitGame")]

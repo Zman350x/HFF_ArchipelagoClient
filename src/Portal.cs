@@ -7,6 +7,7 @@ namespace HffArchipelagoClient
     using UnityEngine.SceneManagement;
     using HumanAPI;
     using TMPro;
+    using ZmanBase;
 
     public class Portal : LevelObject
     {
@@ -56,7 +57,7 @@ namespace HffArchipelagoClient
 
         public void OnDestroy()
         {
-            destination.UnregisterCallback(OnUnlock);
+            destination.callbacks -= OnUnlock;
             vertexBuffer?.Release();
             groupResultsBuffer?.Release();
             finalBoundsBuffer?.Release();
@@ -64,7 +65,7 @@ namespace HffArchipelagoClient
 
         public static GameObject CreatePortal(Transform parent, Vector3 position, Vector3 rotation, LevelSource destination)
         {
-            GameObject portalParent = Instantiate(ResourceManager.PortalPrefab);
+            GameObject portalParent = Instantiate(ArchipelagoResourceManager.PortalPrefab);
             portalParent.name = $"Portal to {destination.levelData.title}";
             portalParent.transform.SetParent(parent);
             portalParent.transform.localPosition = position;
@@ -74,7 +75,7 @@ namespace HffArchipelagoClient
             GameObject portalBody = portalParent.GetComponentInChildren<BoxCollider>().gameObject;
             Portal portalComponent = portalBody.AddComponent<Portal>();
             portalComponent.destination = destination;
-            destination.RegisterCallback(portalComponent.OnUnlock);
+            destination.callbacks += portalComponent.OnUnlock;
 
             portalComponent.portalRenderer = portalBody.GetComponent<Renderer>();
             if (destination.levelData.thumbnailTexture != null)
@@ -82,10 +83,10 @@ namespace HffArchipelagoClient
                 portalComponent.portalRenderer.material.SetTexture(Shader.PropertyToID("_MainTex"), destination.levelData.thumbnailTexture);
                 portalComponent.portalRenderer.material.SetFloat("_MainTextureAspect", (float) destination.levelData.thumbnailTexture.width / (float) destination.levelData.thumbnailTexture.height);
             }
-            if (ResourceManager.LockTexture != null)
+            if (ArchipelagoResourceManager.LockTexture != null)
             {
-                portalComponent.portalRenderer.material.SetTexture(Shader.PropertyToID("_LockTex"), ResourceManager.LockTexture);
-                portalComponent.portalRenderer.material.SetFloat("_LockTextureAspect", (float) ResourceManager.LockTexture.width / (float) ResourceManager.LockTexture.height);
+                portalComponent.portalRenderer.material.SetTexture(Shader.PropertyToID("_LockTex"), ArchipelagoResourceManager.LockTexture);
+                portalComponent.portalRenderer.material.SetFloat("_LockTextureAspect", (float) ArchipelagoResourceManager.LockTexture.width / (float) ArchipelagoResourceManager.LockTexture.height);
             }
             portalComponent.portalRenderer.material.SetFloat("_IsUnlocked", destination.IsUnlocked() ? 1.0f : 0.0f);
             portalComponent.portalRenderer.material.color = Color.white;
@@ -93,7 +94,7 @@ namespace HffArchipelagoClient
             portalComponent.portalRenderer.receiveShadows = false;
             portalComponent.portalRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
 
-            portalComponent.boundsCompute = Instantiate(ResourceManager.BoundsCompute);
+            portalComponent.boundsCompute = Instantiate(ArchipelagoResourceManager.BoundsCompute);
             Vector3[] vertices = portalBody.GetComponent<MeshFilter>().mesh.vertices;
             for (int i = 0; i < vertices.Length; ++i)
             {
@@ -132,8 +133,8 @@ namespace HffArchipelagoClient
             textContent.alignment = TextAlignmentOptions.Center;
             textContent.fontSizeMin = 2;
             textContent.fontSizeMax = 4;
-            textContent.font = ResourceManager.goodDogFont;
-            textContent.fontMaterial = ResourceManager.goodDogFontMaterial;
+            textContent.font = ResourceManager.goodDogFont.asset;
+            textContent.fontMaterial = ArchipelagoResourceManager.portalGoodDogFontMaterial;
             textContent.fontMaterial.renderQueue = 3001;
             textContent.enableWordWrapping = true;
             textContent.enableAutoSizing = true;
