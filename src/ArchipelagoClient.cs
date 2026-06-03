@@ -79,15 +79,13 @@ namespace HffArchipelagoClient
 
         public static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            if (IsActive && !HubWorld.loadingHubWorld)
+            if (IsActive && LoadingTools.loadingLevelNumber != HubWorld.hubLevelSource.levelData.workshopId)
             {
                 MenuButtonTools.EnableDisableButton("PauseMenu", "HubButton", true);
                 MenuButtonTools.EnableDisableButton("PauseMenu", "ExitButton", false);
                 Barrier.OnSceneLoaded(scene, mode);
                 Portal.OnSceneLoaded(scene, mode);
             }
-
-            HubWorld.loadingHubWorld = false;
         }
 
         [HarmonyPatch(typeof(Multiplayer.App), "ExitGame")]

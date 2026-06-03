@@ -9,8 +9,6 @@ namespace HffArchipelagoClient
 
     public static class HubWorld
     {
-        public static bool loadingHubWorld = false;
-
         private static GameObject hubLevelObject;
         private static Level hubLevel;
 
@@ -33,7 +31,6 @@ namespace HffArchipelagoClient
             previousLevelType = Game.instance.currentLevelType;
             previousLevelNumber = Game.instance.currentLevelNumber;
 
-            loadingHubWorld = true;
             LoadingTools.LoadLevel(hubLevelSource.levelData);
         }
 
