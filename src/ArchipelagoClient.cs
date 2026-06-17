@@ -23,7 +23,7 @@ namespace HffArchipelagoClient
             Logger = base.Logger;
 
             SceneManager.sceneLoaded += OnSceneLoaded;
-            LoadingTools.StartupEvent += OnStartup;
+            LevelTools.StartupEvent += OnStartup;
             Harmony.CreateAndPatchAll(typeof(ArchipelagoClient), "ArchipelagoClient");
             ArchipelagoLoadingTools.Patch();
         }
@@ -79,7 +79,7 @@ namespace HffArchipelagoClient
 
         public static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            if (IsActive && LoadingTools.loadingLevelNumber != HubWorld.hubLevelSource.levelData.workshopId)
+            if (IsActive && LevelTools.loadingLevelNumber != HubWorld.hubLevelSource.levelData.workshopId)
             {
                 MenuButtonTools.EnableDisableButton("PauseMenu", "HubButton", true);
                 MenuButtonTools.EnableDisableButton("PauseMenu", "ExitButton", false);

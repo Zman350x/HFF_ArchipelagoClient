@@ -19,7 +19,7 @@ namespace HffArchipelagoClient
         public static readonly LevelSource hubLevelSource = new LevelSource(
             new WorkshopLevelMetadata {
                 itemType = WorkshopItemType.Level,
-                workshopId = LoadingTools.RegisterRuntimeLevel(OnHubWorldLoaded),
+                workshopId = LevelTools.RegisterRuntimeLevel(OnHubWorldLoaded),
                 title = "Archipelago Hub",
                 levelType = WorkshopItemSource.NotSpecified,
                 cachedThumbnail = ArchipelagoResourceManager.HubWorldThumbnail,
@@ -31,7 +31,7 @@ namespace HffArchipelagoClient
             previousLevelType = Game.instance.currentLevelType;
             previousLevelNumber = Game.instance.currentLevelNumber;
 
-            LoadingTools.LoadLevel(hubLevelSource.levelData);
+            LevelTools.LoadLevel(hubLevelSource.levelData);
         }
 
         public static void OnHubWorldLoaded()
