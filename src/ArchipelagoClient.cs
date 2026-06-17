@@ -30,7 +30,7 @@ namespace HffArchipelagoClient
 
         private static void OnStartup()
         {
-            MenuButtonTools.AddButton("SelectPlayersMenu", "ArchipelagoButton", "ARCHIPELAGO", 3, ArchipelagoStart);
+            MenuTools.AddButton("SelectPlayersMenu", "ArchipelagoButton", "ARCHIPELAGO", 3, ArchipelagoStart);
         }
 
         public static void ArchipelagoStart()
@@ -57,7 +57,7 @@ namespace HffArchipelagoClient
 
             InputLimiter.Patch();
             Shell.RegisterCommand("hub", new Action(HubWorld.LoadHubWorld), "hub\r\nReturn to the Archipelago hub");
-            MenuButtonTools.AddButton("PauseMenu", "HubButton", "RETURN TO ARCHIPELAGO HUB", 7, () => {
+            MenuTools.AddButton("PauseMenu", "HubButton", "RETURN TO ARCHIPELAGO HUB", 7, () => {
                     Game.instance.Resume();
                     MenuSystem.instance.HideMenus();
                     HubWorld.LoadHubWorld();
@@ -71,8 +71,8 @@ namespace HffArchipelagoClient
         {
             InputLimiter.Unpatch();
             ZmanBaseMod.Commands.UnRegisterCommand("hub", new Action(HubWorld.LoadHubWorld));
-            MenuButtonTools.DestroyButton("PauseMenu", "HubButton");
-            MenuButtonTools.EnableDisableButton("PauseMenu", "ExitButton", true);
+            MenuTools.DestroyButton("PauseMenu", "HubButton");
+            MenuTools.EnableDisableButton("PauseMenu", "ExitButton", true);
 
             IsActive = false;
         }
@@ -81,8 +81,8 @@ namespace HffArchipelagoClient
         {
             if (IsActive && LevelTools.loadingLevelNumber != HubWorld.hubLevelSource.levelData.workshopId)
             {
-                MenuButtonTools.EnableDisableButton("PauseMenu", "HubButton", true);
-                MenuButtonTools.EnableDisableButton("PauseMenu", "ExitButton", false);
+                MenuTools.EnableDisableButton("PauseMenu", "HubButton", true);
+                MenuTools.EnableDisableButton("PauseMenu", "ExitButton", false);
                 Barrier.OnSceneLoaded(scene, mode);
                 Portal.OnSceneLoaded(scene, mode);
             }

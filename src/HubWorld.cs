@@ -36,8 +36,8 @@ namespace HffArchipelagoClient
 
         public static void OnHubWorldLoaded()
         {
-            MenuButtonTools.EnableDisableButton("PauseMenu", "HubButton", false);
-            MenuButtonTools.EnableDisableButton("PauseMenu", "ExitButton", true);
+            MenuTools.EnableDisableButton("PauseMenu", "HubButton", false);
+            MenuTools.EnableDisableButton("PauseMenu", "ExitButton", true);
 
             // Create and deactivate a new root game object
             hubLevelObject = new GameObject("Level");
