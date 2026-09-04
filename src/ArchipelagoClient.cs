@@ -17,6 +17,8 @@ namespace HffArchipelagoClient
 
         internal static new BepInEx.Logging.ManualLogSource Logger;
 
+        ConfigMenu archipelagoClientConfigMenu;
+
         private void Awake()
         {
             Instance = this;
@@ -26,6 +28,8 @@ namespace HffArchipelagoClient
             LevelTools.StartupEvent += OnStartup;
             Harmony.CreateAndPatchAll(typeof(ArchipelagoClient), "ArchipelagoClient");
             ArchipelagoLoadingTools.Patch();
+
+            archipelagoClientConfigMenu = new ConfigMenu("ArchipelagoClient", "Archipelago Client", "ARCHIPELAGO CLIENT");
         }
 
         private static void OnStartup()

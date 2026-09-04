@@ -292,6 +292,10 @@ namespace HffArchipelagoClient
                     position = new Vector3(-75.66f, 0.53f, -32.46f);
                     rotation = new Vector3(0.0f, 215.0f, 2.0f);
                     break;
+                case Levels.ANNIVERSARY:
+                    position = new Vector3(-26.0f, -9.01f, -54.74f);
+                    rotation = new Vector3(0.0f, 270.0f, 0.0f);
+                    break;
 
                 // Lobbies
                 case Levels.WORKSHOP_LOBBY:
